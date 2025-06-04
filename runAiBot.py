@@ -264,10 +264,10 @@ def get_page_info() -> tuple[WebElement | None, int | None]:
 
 
 def find_job_listings() -> list[WebElement]:
-    '''
+    """
     Finds all job listing elements on the search result page.
     Tries multiple selectors to remain compatible with LinkedIn layout changes.
-    '''
+    """
     selectors = [
         (By.CSS_SELECTOR, "li[data-occludable-job-id]"),
         (By.CSS_SELECTOR, "li.scaffold-layout__list-item")
@@ -281,6 +281,7 @@ def find_job_listings() -> list[WebElement]:
         except Exception:
             continue
     raise ValueError("No job listings found")
+
 
 
 
