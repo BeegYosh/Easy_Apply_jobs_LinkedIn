@@ -17,6 +17,7 @@ version:    24.12.29.12.30
 
 import os
 import json
+import re
 
 from time import sleep
 from random import randint
@@ -155,32 +156,29 @@ def calculate_date_posted(time_string: str) -> datetime | None | ValueError:
     * 1 year ago
     '''
     time_string = time_string.strip()
-    # print_lg(f"Trying to calculate date job was posted from '{time_string}'")
     now = datetime.now()
-    if "second" in time_string:
-        seconds = int(time_string.split()[0])
-        date_posted = now - timedelta(seconds=seconds)
-    elif "minute" in time_string:
-        minutes = int(time_string.split()[0])
-        date_posted = now - timedelta(minutes=minutes)
-    elif "hour" in time_string:
-        hours = int(time_string.split()[0])
-        date_posted = now - timedelta(hours=hours)
-    elif "day" in time_string:
-        days = int(time_string.split()[0])
-        date_posted = now - timedelta(days=days)
-    elif "week" in time_string:
-        weeks = int(time_string.split()[0])
-        date_posted = now - timedelta(weeks=weeks)
-    elif "month" in time_string:
-        months = int(time_string.split()[0])
-        date_posted = now - timedelta(days=months * 30)
-    elif "year" in time_string:
-        years = int(time_string.split()[0])
-        date_posted = now - timedelta(days=years * 365)
-    else:
-        date_posted = None
-    return date_posted
+    match = re.search(r"(\d+)\s+(second|minute|hour|day|week|month|year)s?", time_string)
+    if not match:
+        return None
+    value = int(match.group(1))
+    unit = match.group(2)
+
+    if unit == "second":
+        return now - timedelta(seconds=value)
+    if unit == "minute":
+        return now - timedelta(minutes=value)
+    if unit == "hour":
+        return now - timedelta(hours=value)
+    if unit == "day":
+        return now - timedelta(days=value)
+    if unit == "week":
+        return now - timedelta(weeks=value)
+    if unit == "month":
+        return now - timedelta(days=value * 30)
+    if unit == "year":
+        return now - timedelta(days=value * 365)
+
+    return None
     
 
 def convert_to_lakhs(value: str) -> str:
