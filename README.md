@@ -39,6 +39,7 @@ Click on above image to watch the demo or use this link https://youtu.be/gMbB1fW
   <br> <br>
   If you are using Windows, click on `windows-setup.bat` available in the `/setup` folder, this will install the latest chromedriver automatically.
 6. If you have questions or need help setting it up or to talk in general, join the github server: https://discord.gg/fFp7uUzWCY
+7. **Note**: Recent updates changed how job cards are detected. The bot now searches for `li[data-occludable-job-id]` elements and falls back to the class selector `li.scaffold-layout__list-item`. Older dynamic `emberXXX` IDs are no longer used.
 
 [back to index](#-content)
 
