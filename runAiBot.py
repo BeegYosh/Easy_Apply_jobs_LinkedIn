@@ -270,7 +270,7 @@ def find_job_listings() -> list[WebElement]:
     '''
     selectors = [
         (By.CSS_SELECTOR, "li[data-occludable-job-id]"),
-        (By.CSS_SELECTOR, "li.scaffold-layout__list-item")
+        (By.CSS_SELECTOR, "div.scaffold-layout__list ul > li.scaffold-layout__list-item")
     ]
     for selector in selectors:
         try:

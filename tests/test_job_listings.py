@@ -31,6 +31,17 @@ HTML = """
 </body></html>
 """
 
+HTML_NO_ATTR = """
+<html><body>
+<div class='scaffold-layout__list'>
+<ul>
+<li class='scaffold-layout__list-item'><a href='#'>Job 1</a></li>
+<li class='scaffold-layout__list-item'><a href='#'>Job 2</a></li>
+</ul>
+</div>
+</body></html>
+"""
+
 def start_driver():
     options = Options()
     options.add_argument('--headless=new')
@@ -44,6 +55,20 @@ def start_driver():
 def test_find_job_listings(tmp_path):
     html_file = tmp_path / 'page.html'
     html_file.write_text(HTML)
+    driver = start_driver()
+    try:
+        runAiBot.driver = driver
+        runAiBot.wait = WebDriverWait(driver, 1)
+        driver.get(html_file.as_uri())
+        items = runAiBot.find_job_listings()
+        assert len(items) == 2
+    finally:
+        driver.quit()
+
+
+def test_find_job_listings_fallback(tmp_path):
+    html_file = tmp_path / 'page.html'
+    html_file.write_text(HTML_NO_ATTR)
     driver = start_driver()
     try:
         runAiBot.driver = driver
