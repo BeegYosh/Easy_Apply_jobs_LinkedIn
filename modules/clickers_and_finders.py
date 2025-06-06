@@ -21,6 +21,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException
 
 # Click Functions
 def wait_span_click(driver: WebDriver, text: str, time: float=5.0, click: bool=True, scroll: bool=True, scrollTop: bool=False) -> WebElement | bool:
@@ -182,3 +183,28 @@ def find_easy_apply_button(driver: WebDriver) -> WebElement | bool:
             scroll_to_view(driver, btn, True)
             return btn
     return False
+
+
+def click_easy_apply(driver: WebDriver, pagination_element: WebElement | None,
+                     application_link: str, tabs_count: int) -> tuple[bool, str, int]:
+    """Click the external application button and switch to the new tab."""
+    try:
+        WebDriverWait(driver, 5).until(
+            EC.element_to_be_clickable(
+                (
+                    By.XPATH,
+                    ".//button[contains(@class,'jobs-apply-button') and contains(@class, 'artdeco-button--3')]",
+                )
+            )
+        ).click()
+        wait_span_click(driver, "Continue", 1, True, False)
+        windows = driver.window_handles
+        tabs_count = len(windows)
+        driver.switch_to.window(windows[-1])
+        application_link = driver.current_url
+        print_lg(f'Got the external application link "{application_link}"')
+        return False, application_link, tabs_count
+    except (TimeoutException, ElementClickInterceptedException):
+        if pagination_element is not None:
+            return True, application_link, tabs_count
+        return True, application_link, tabs_count
