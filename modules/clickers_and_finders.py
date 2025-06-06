@@ -185,34 +185,12 @@ def find_easy_apply_button(driver: WebDriver) -> WebElement | bool:
     return False
 
 
-byigi1-codex/implement-click_easy_apply-in-external_apply
 def click_easy_apply(
     driver: WebDriver,
     pagination_element: WebElement | None,
     application_link: str,
     tabs_count: int,
 ) -> tuple[bool, str, int]:
-    """Click the external application button and switch to the new tab."""
-    try:
-        container = driver.find_element(
-            By.CSS_SELECTOR,
-            "div.job-details-jobs-unified-top-card__container--two-pane",
-        )
-        ea_button = container.find_element(
-            By.CSS_SELECTOR, "button.jobs-apply-button.artdeco-button--3"
-        )
-        driver.execute_script(
-            "arguments[0].scrollIntoView({block:'center'});", container
-        )
-        driver.execute_script("window.scrollBy(0, -60);")
-        try:
-            ea_button.click()
-        except ElementClickInterceptedException:
-            driver.execute_script("arguments[0].click()", ea_button)
-
-            
-def click_easy_apply(driver: WebDriver, pagination_element: WebElement | None,
-                     application_link: str, tabs_count: int) -> tuple[bool, str, int]:
     """Click the external application button and switch to the new tab."""
     try:
         WebDriverWait(driver, 5).until(
@@ -223,7 +201,6 @@ def click_easy_apply(driver: WebDriver, pagination_element: WebElement | None,
                 )
             )
         ).click()
-main
         wait_span_click(driver, "Continue", 1, True, False)
         windows = driver.window_handles
         tabs_count = len(windows)
@@ -231,12 +208,13 @@ main
         application_link = driver.current_url
         print_lg(f'Got the external application link "{application_link}"')
         return False, application_link, tabs_count
-byigi1-codex/implement-click_easy_apply-in-external_apply
-    except Exception:
-        print_lg("Easy Apply unavailable or couldn't be clicked")
-
     except (TimeoutException, ElementClickInterceptedException):
-main
+        print_lg("Easy Apply unavailable or couldn't be clicked")
+        if pagination_element is not None:
+            return True, application_link, tabs_count
+        return True, application_link, tabs_count
+    except Exception as e:
+        print_lg(f"Error in click_easy_apply: {e}")
         if pagination_element is not None:
             return True, application_link, tabs_count
         return True, application_link, tabs_count
