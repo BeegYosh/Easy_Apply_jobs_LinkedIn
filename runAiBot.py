@@ -32,7 +32,6 @@ from selenium.common.exceptions import (
     ElementClickInterceptedException,
     NoSuchWindowException,
     ElementNotInteractableException,
-    TimeoutException,
 )
 
 from config.personals import *
