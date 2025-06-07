@@ -801,7 +801,7 @@ def external_apply(pagination_element: WebElement, job_id: str, job_link: str, r
     '''
     global tabs_count, dailyEasyApplyLimitReached
     if easy_apply_only:
-        message = ""
+        message = "External apply job skipped"
         try:
             notice = driver.find_element(By.CLASS_NAME, "artdeco-inline-feedback__message").text
             if "exceeded the daily application limit" in notice:
@@ -809,10 +809,24 @@ def external_apply(pagination_element: WebElement, job_id: str, job_link: str, r
                 message = "Daily application limit for Easy Apply is reached"
         except Exception:
             pass
-        if not message:
-            message = "Easy Apply unavailable or couldn't be clicked"
         print_lg(message)
+pc3zwj-codex/implement-click_easy_apply-in-external_apply
+        failed_job(
+            job_id,
+            job_link,
+            resume,
+            date_listed,
+            message,
+            "Skipped",
+            application_link,
+            screenshot_name,
+        )
+        global skip_count
+        skip_count += 1
+        if pagination_element != None:
+            return True, application_link, tabs_count
         if pagination_element != None: return True, application_link, tabs_count
+main
     skip, application_link, tabs_count = click_easy_apply(driver, pagination_element, application_link, tabs_count)
     if skip:
         print_lg("Failed to apply!")
@@ -1057,18 +1071,20 @@ def apply_to_jobs(search_terms: list[str]) -> None:
                     # Case 1: Easy Apply Button
                     easy_apply_button = find_easy_apply_button(driver)
                     if easy_apply_button:
-                        try:
-                            easy_apply_button.click()
-                        except Exception as e:
-                            print_lg("Failed to click Easy Apply button", e)
-                            skip, application_link, tabs_count = external_apply(pagination_element, job_id, job_link, resume, date_listed, application_link, screenshot_name)
-                            if dailyEasyApplyLimitReached:
-                                print_lg("\n###############  Daily application limit for Easy Apply is reached!  ###############\n")
-                                return
-                            if skip:
-                                continue
-
-                        easy_apply_button.click()
+                        if not click_easy_apply_button(driver):
+                            print_lg("Easy Apply unavailable or couldn't be clicked")
+                            failed_job(
+                                job_id,
+                                job_link,
+                                resume,
+                                date_listed,
+                                "Easy Apply click failed",
+                                "Click failed",
+                                application_link,
+                                screenshot_name,
+                            )
+                            skip_count += 1
+                            continue
                         try: 
                             try:
                                 errored = ""

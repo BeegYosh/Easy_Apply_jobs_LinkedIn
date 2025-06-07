@@ -185,6 +185,34 @@ def find_easy_apply_button(driver: WebDriver) -> WebElement | bool:
     return False
 
 
+pc3zwj-codex/implement-click_easy_apply-in-external_apply
+def click_easy_apply_button(driver: WebDriver) -> bool:
+    """Safely click the Easy Apply button if present."""
+    try:
+        container = driver.find_element(
+            By.CSS_SELECTOR, "div.job-details-jobs-unified-top-card__container--two-pane"
+        )
+        ea_button = container.find_element(
+            By.CSS_SELECTOR, "button.jobs-apply-button.artdeco-button--3"
+        )
+    except Exception:
+        return False
+
+    driver.execute_script(
+        "arguments[0].scrollIntoView({block:'center'});", container
+    )
+    driver.execute_script("window.scrollBy(0, -60);")
+    try:
+        ea_button.click()
+    except ElementClickInterceptedException:
+        try:
+            driver.execute_script("arguments[0].click()", ea_button)
+        except Exception:
+            return False
+    return True
+
+
+main
 def click_easy_apply(
     driver: WebDriver,
     pagination_element: WebElement | None,
@@ -193,7 +221,24 @@ def click_easy_apply(
 ) -> tuple[bool, str, int]:
     """Click the external application button and switch to the new tab."""
     try:
-        WebDriverWait(driver, 5).until(
+pc3zwj-codex/implement-click_easy_apply-in-external_apply
+        container = driver.find_element(
+            By.CSS_SELECTOR,
+            "div.job-details-jobs-unified-top-card__container--two-pane",
+        )
+        ea_button = container.find_element(
+            By.CSS_SELECTOR, "button.jobs-apply-button.artdeco-button--3"
+        )
+        driver.execute_script(
+            "arguments[0].scrollIntoView({block:'center'});", container
+        )
+        driver.execute_script("window.scrollBy(0, -60);")
+        try:
+            ea_button.click()
+        except ElementClickInterceptedException:
+            driver.execute_script("arguments[0].click()", ea_button)
+
+WebDriverWait(driver, 5).until(
             EC.element_to_be_clickable(
                 (
                     By.XPATH,
@@ -201,6 +246,7 @@ def click_easy_apply(
                 )
             )
         ).click()
+main
         wait_span_click(driver, "Continue", 1, True, False)
         windows = driver.window_handles
         tabs_count = len(windows)
@@ -208,13 +254,18 @@ def click_easy_apply(
         application_link = driver.current_url
         print_lg(f'Got the external application link "{application_link}"')
         return False, application_link, tabs_count
+pc3zwj-codex/implement-click_easy_apply-in-external_apply
+    except Exception:
     except (TimeoutException, ElementClickInterceptedException):
+main
         print_lg("Easy Apply unavailable or couldn't be clicked")
         if pagination_element is not None:
             return True, application_link, tabs_count
         return True, application_link, tabs_count
+pc3zwj-codex/implement-click_easy_apply-in-external_apply
     except Exception as e:
         print_lg(f"Error in click_easy_apply: {e}")
         if pagination_element is not None:
             return True, application_link, tabs_count
         return True, application_link, tabs_count
+main
