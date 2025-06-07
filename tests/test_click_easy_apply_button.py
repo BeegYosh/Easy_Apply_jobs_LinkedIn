@@ -29,3 +29,18 @@ def test_click_easy_apply_button_intercepted(monkeypatch):
 
     driver.execute_script.assert_any_call("arguments[0].click()", button)
     assert result is True
+
+
+def test_click_easy_apply_button_with_element(monkeypatch):
+    driver = MagicMock()
+    button = MagicMock()
+
+    # When passing the button directly the function should not try to
+    # locate it again and should still handle intercepted clicks.
+    button.click.side_effect = ElementClickInterceptedException()
+
+    result = click_easy_apply_button(driver, button)
+
+    driver.find_element.assert_not_called()
+    driver.execute_script.assert_any_call("arguments[0].click()", button)
+    assert result is True
