@@ -21,7 +21,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.common.action_chains import ActionChains
-from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException
+from selenium.common.exceptions import ElementClickInterceptedException
 
 # Click Functions
 def wait_span_click(driver: WebDriver, text: str, time: float=5.0, click: bool=True, scroll: bool=True, scrollTop: bool=False) -> WebElement | bool:
@@ -249,7 +249,7 @@ def click_easy_apply(
         application_link = driver.current_url
         print_lg(f'Got the external application link "{application_link}"')
         return False, application_link, tabs_count
-    except (TimeoutException, ElementClickInterceptedException):
+    except ElementClickInterceptedException:
         print_lg("Easy Apply unavailable or couldn't be clicked")
         if pagination_element is not None:
             return True, application_link, tabs_count
