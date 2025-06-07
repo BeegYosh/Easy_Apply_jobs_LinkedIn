@@ -983,6 +983,12 @@ def apply_to_jobs(search_terms: list[str]) -> None:
                     questions_list = None
                     screenshot_name = "Not Available"
 
+                    # Locate the Easy Apply button once and pass it to the
+                    # click helper. This avoids searching for the element
+                    # multiple times within `click_easy_apply_button`.
+                    easy_apply_btn = find_easy_apply_button(driver)
+                    click_easy_apply_button(driver, easy_apply_btn)
+
                     try:
                         rejected_jobs, blacklisted_companies, jobs_top_card = check_blacklist(rejected_jobs,job_id,company,blacklisted_companies)
                     except ValueError as e:

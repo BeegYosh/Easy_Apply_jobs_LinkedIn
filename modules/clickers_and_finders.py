@@ -184,30 +184,38 @@ def find_easy_apply_button(driver: WebDriver) -> WebElement | bool:
             return btn
     return False
 
-def click_easy_apply_button(driver: WebDriver) -> bool:
-    """Safely click the Easy Apply button if present."""
+def click_easy_apply_button(driver: WebDriver, button: WebElement | None = None) -> bool:
+    """Safely click the Easy Apply button if present.
+
+    Parameters
+    ----------
+    driver : WebDriver
+        Selenium driver instance.
+    button : WebElement | None, optional
+        If provided, this element will be used as the Easy Apply button.
+        Otherwise the function attempts to locate the button itself.
+    """
+
     try:
-        container = driver.find_element(
-            By.CSS_SELECTOR, "div.job-details-jobs-unified-top-card__container--two-pane"
+        if button is None:
+            container = driver.find_element(
+                By.CSS_SELECTOR, "div.job-details-jobs-unified-top-card__container--two-pane"
+            )
+            button = container.find_element(
+                By.CSS_SELECTOR, "button.jobs-apply-button.artdeco-button--3"
+            )
+        driver.execute_script(
+            "arguments[0].scrollIntoView({block:'center'});",
+            button,
         )
-        ea_button = container.find_element(
-            By.CSS_SELECTOR, "button.jobs-apply-button.artdeco-button--3"
-        )
+        driver.execute_script("window.scrollBy(0, -60);")
+        try:
+            button.click()
+        except ElementClickInterceptedException:
+            driver.execute_script("arguments[0].click()", button)
+        return True
     except Exception:
         return False
-
-    driver.execute_script(
-        "arguments[0].scrollIntoView({block:'center'});", container
-    )
-    driver.execute_script("window.scrollBy(0, -60);")
-    try:
-        ea_button.click()
-    except ElementClickInterceptedException:
-        try:
-            driver.execute_script("arguments[0].click()", ea_button)
-        except Exception:
-            return False
-    return True
 
 
 def click_easy_apply(
