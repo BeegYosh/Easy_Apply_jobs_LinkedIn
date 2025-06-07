@@ -15,6 +15,7 @@ version:    24.12.29.12.30
 from modules.helpers import make_directories
 from config.settings import run_in_background, stealth_mode, disable_extensions, safe_mode, file_name, failed_file_name, logs_folder_path, generated_resume_path
 from config.questions import default_resume_path
+import atexit
 if stealth_mode:
     import undetected_chromedriver as uc
 else: 
@@ -60,4 +61,13 @@ except Exception as e:
     alert(msg, "Error in opening chrome")
     try: driver.quit()
     except NameError: exit()
+
+def _close_driver() -> None:
+    """Ensure the browser is closed when the program exits."""
+    try:
+        driver.quit()
+    except Exception:
+        pass
+
+atexit.register(_close_driver)
     
