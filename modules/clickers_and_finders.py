@@ -184,8 +184,6 @@ def find_easy_apply_button(driver: WebDriver) -> WebElement | bool:
             return btn
     return False
 
-
-pc3zwj-codex/implement-click_easy_apply-in-external_apply
 def click_easy_apply_button(driver: WebDriver) -> bool:
     """Safely click the Easy Apply button if present."""
     try:
@@ -212,7 +210,6 @@ def click_easy_apply_button(driver: WebDriver) -> bool:
     return True
 
 
-main
 def click_easy_apply(
     driver: WebDriver,
     pagination_element: WebElement | None,
@@ -221,7 +218,6 @@ def click_easy_apply(
 ) -> tuple[bool, str, int]:
     """Click the external application button and switch to the new tab."""
     try:
-pc3zwj-codex/implement-click_easy_apply-in-external_apply
         container = driver.find_element(
             By.CSS_SELECTOR,
             "div.job-details-jobs-unified-top-card__container--two-pane",
@@ -238,7 +234,7 @@ pc3zwj-codex/implement-click_easy_apply-in-external_apply
         except ElementClickInterceptedException:
             driver.execute_script("arguments[0].click()", ea_button)
 
-WebDriverWait(driver, 5).until(
+        WebDriverWait(driver, 5).until(
             EC.element_to_be_clickable(
                 (
                     By.XPATH,
@@ -246,7 +242,6 @@ WebDriverWait(driver, 5).until(
                 )
             )
         ).click()
-main
         wait_span_click(driver, "Continue", 1, True, False)
         windows = driver.window_handles
         tabs_count = len(windows)
@@ -254,18 +249,13 @@ main
         application_link = driver.current_url
         print_lg(f'Got the external application link "{application_link}"')
         return False, application_link, tabs_count
-pc3zwj-codex/implement-click_easy_apply-in-external_apply
-    except Exception:
     except (TimeoutException, ElementClickInterceptedException):
-main
         print_lg("Easy Apply unavailable or couldn't be clicked")
         if pagination_element is not None:
             return True, application_link, tabs_count
         return True, application_link, tabs_count
-pc3zwj-codex/implement-click_easy_apply-in-external_apply
     except Exception as e:
         print_lg(f"Error in click_easy_apply: {e}")
         if pagination_element is not None:
             return True, application_link, tabs_count
         return True, application_link, tabs_count
-main
