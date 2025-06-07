@@ -810,6 +810,7 @@ def external_apply(pagination_element: WebElement, job_id: str, job_link: str, r
         except Exception:
             pass
         print_lg(message)
+pc3zwj-codex/implement-click_easy_apply-in-external_apply
         failed_job(
             job_id,
             job_link,
@@ -824,6 +825,8 @@ def external_apply(pagination_element: WebElement, job_id: str, job_link: str, r
         skip_count += 1
         if pagination_element != None:
             return True, application_link, tabs_count
+        if pagination_element != None: return True, application_link, tabs_count
+main
     skip, application_link, tabs_count = click_easy_apply(driver, pagination_element, application_link, tabs_count)
     if skip:
         print_lg("Failed to apply!")
