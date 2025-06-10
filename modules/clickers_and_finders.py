@@ -103,16 +103,41 @@ def find_by_class(driver: WebDriver, class_name: str, time: float=5.0) -> WebEle
     return WebDriverWait(driver, time).until(EC.presence_of_element_located((By.CLASS_NAME, class_name)))
 
 # Scroll functions
-def scroll_to_view(driver: WebDriver, element: WebElement, top: bool = False, smooth_scroll: bool = smooth_scroll) -> None:
+def scroll_to_view(
+    driver: WebDriver,
+    element: WebElement,
+    top: bool = False,
+    smooth_scroll: bool = smooth_scroll,
+    offset: int = 0,
+) -> None:
     '''
-    Scrolls the `element` to view.
+    Scrolls the `element` into view and adjusts for sticky headers.
     - `smooth_scroll` will scroll with smooth behavior.
-    - `top` will scroll to the `element` to top of the view.
+    - `top` will scroll the element to the top of the view.
+    - `offset` nudges the scroll position upward by given pixels.
     '''
     if top:
-        return driver.execute_script('arguments[0].scrollIntoView();', element)
-    behavior = "smooth" if smooth_scroll else "instant"
-    return driver.execute_script('arguments[0].scrollIntoView({block: "center", behavior: "'+behavior+'" });', element)
+        driver.execute_script('arguments[0].scrollIntoView();', element)
+    else:
+        behavior = "smooth" if smooth_scroll else "instant"
+        driver.execute_script('arguments[0].scrollIntoView({block: "center", behavior: "'+behavior+'" });', element)
+    if offset:
+        driver.execute_script(f'window.scrollBy(0, -{offset});')
+    return None
+
+##> ------ OpenAI : codex - Feature ------
+def click_element(driver: WebDriver, by: By, locator: str, timeout: int = 5) -> WebElement:
+    '''
+    Waits for an element to be clickable and clicks it.
+    Falls back to JavaScript click on failure.
+    '''
+    element = WebDriverWait(driver, timeout).until(EC.element_to_be_clickable((by, locator)))
+    try:
+        element.click()
+    except Exception:
+        driver.execute_script('arguments[0].click();', element)
+    return element
+##<
 
 # Enter input text functions
 def text_input_by_ID(driver: WebDriver, id: str, value: str, time: float=5.0) -> None | Exception:
@@ -180,7 +205,7 @@ def find_easy_apply_button(driver: WebDriver) -> WebElement | bool:
     for xp in xpaths:
         btn = try_xp(driver, xp, False)
         if btn:
-            scroll_to_view(driver, btn, True)
+            scroll_to_view(driver, btn, True, offset=80)
             return btn
     return False
 
