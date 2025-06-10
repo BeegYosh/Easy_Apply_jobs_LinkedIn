@@ -1057,8 +1057,13 @@ def apply_to_jobs(search_terms: list[str]) -> None:
                     # Case 1: Easy Apply Button
                     easy_apply_button = find_easy_apply_button(driver)
                     if easy_apply_button:
+                        ##> ------ OpenAI : codex - Bug fix ------
                         try:
-                            easy_apply_button.click()
+                            element_id = easy_apply_button.get_attribute('id')
+                            if element_id:
+                                click_element(driver, By.ID, element_id, timeout=10)
+                            else:
+                                click_element(driver, By.XPATH, "//button[contains(@class,'jobs-apply-button') and contains(@class, 'artdeco-button--3') and contains(@aria-label, 'Easy')]")
                         except Exception as e:
                             print_lg("Failed to click Easy Apply button", e)
                             skip, application_link, tabs_count = external_apply(pagination_element, job_id, job_link, resume, date_listed, application_link, screenshot_name)
@@ -1068,7 +1073,12 @@ def apply_to_jobs(search_terms: list[str]) -> None:
                             if skip:
                                 continue
 
-                        easy_apply_button.click()
+                        element_id = easy_apply_button.get_attribute('id')
+                        if element_id:
+                            click_element(driver, By.ID, element_id, timeout=10)
+                        else:
+                            click_element(driver, By.XPATH, "//button[contains(@class,'jobs-apply-button') and contains(@class, 'artdeco-button--3') and contains(@aria-label, 'Easy')]")
+                        ##<
                         try: 
                             try:
                                 errored = ""
