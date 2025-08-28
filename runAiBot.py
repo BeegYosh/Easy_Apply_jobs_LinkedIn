@@ -19,6 +19,9 @@ import csv
 import re
 import pyautogui
 
+# Set CSV field size limit to prevent field size errors
+csv.field_size_limit(1000000)  # Set to 1MB instead of default 131KB
+
 from random import choice, shuffle, randint
 from datetime import datetime
 
@@ -27,18 +30,12 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.remote.webelement import WebElement
-from selenium.common.exceptions import (
-    NoSuchElementException,
-    ElementClickInterceptedException,
-    NoSuchWindowException,
-    ElementNotInteractableException,
-    TimeoutException,
-)
+from selenium.common.exceptions import NoSuchElementException, ElementClickInterceptedException, NoSuchWindowException, ElementNotInteractableException, WebDriverException
 
 from config.personals import *
 from config.questions import *
 from config.search import *
-from config.secrets import use_AI, username, password, ai_provider
+from config.secrets import use_AI, username, password, ai_provider, llm_api_url
 from config.settings import *
 
 from modules.open_chrome import *
@@ -47,6 +44,9 @@ from modules.clickers_and_finders import *
 from modules.validator import validate_config
 from modules.ai.openaiConnections import ai_create_openai_client, ai_extract_skills, ai_answer_question, ai_close_openai_client
 from modules.ai.deepseekConnections import deepseek_create_client, deepseek_extract_skills, deepseek_answer_question
+
+# Commented out the import as the module does not exist
+# from modules.ai.geminiConnections import gemini_create_client, gemini_extract_skills, gemini_answer_question
 
 from typing import Literal
 
@@ -269,27 +269,6 @@ def get_page_info() -> tuple[WebElement | None, int | None]:
     return pagination_element, current_page
 
 
-def find_job_listings() -> list[WebElement]:
-    '''
-    Finds all job listing elements on the search result page.
-    Tries multiple selectors to remain compatible with LinkedIn layout changes.
-    '''
-    selectors = [
-        (By.CSS_SELECTOR, "li[data-occludable-job-id]"),
-        (By.XPATH, "//li[@data-occludable-job-id]"),
-        (By.CSS_SELECTOR, "div.scaffold-layout__list ul > li.scaffold-layout__list-item")
-    ]
-    for selector in selectors:
-        try:
-            wait.until(EC.presence_of_all_elements_located(selector))
-            listings = driver.find_elements(*selector)
-            if listings:
-                return listings
-        except Exception:
-            continue
-    raise ValueError("No job listings found")
-
-
 
 def get_job_main_details(job: WebElement, blacklisted_companies: set, rejected_jobs: set) -> tuple[str, str, str, str, str, bool]:
     '''
@@ -305,18 +284,6 @@ def get_job_main_details(job: WebElement, blacklisted_companies: set, rejected_j
     job_details_button = job.find_element(By.TAG_NAME, 'a')  # job.find_element(By.CLASS_NAME, "job-card-list__title")  # Problem in India
     scroll_to_view(driver, job_details_button, True)
     job_id = job.get_dom_attribute('data-occludable-job-id')
-    if not job_id:
-        job_id = job.get_dom_attribute('data-job-id')
-    if not job_id:
-        try:
-            job_id = job.find_element(By.CSS_SELECTOR, '[data-job-id]').get_dom_attribute('data-job-id')
-        except NoSuchElementException:
-            job_id = None
-    if not job_id:
-        href = job_details_button.get_attribute('href')
-        m = re.search(r"currentJobId=(\d+)", href or "")
-        if m:
-            job_id = m.group(1)
     title = job_details_button.text
     title = title[:title.find("\n")]
     # company = job.find_element(By.CLASS_NAME, "job-card-container__primary-description").text
@@ -456,18 +423,7 @@ def upload_resume(modal: WebElement, resume: str) -> tuple[bool, str]:
 
 # Function to answer common questions for Easy Apply
 def answer_common_questions(label: str, answer: str) -> str:
-    label_low = label.lower()
-    if 'sponsorship' in label_low or 'visa' in label_low:
-        answer = require_visa
-    elif 'background' in label_low and 'check' in label_low:
-        answer = background_check
-    elif (
-        ('authorized' in label_low and 'work' in label_low)
-        or ('authorization' in label_low and 'work' in label_low)
-        or ('eligible' in label_low and 'work' in label_low)
-        or ('right to work' in label_low)
-    ):
-        answer = authorized_to_work
+    if 'sponsorship' in label or 'visa' in label: answer = require_visa
     return answer
 
 
@@ -506,18 +462,14 @@ def answer_questions(modal: WebElement, questions_list: set, work_location: str,
                     answer = prev_answer
                 elif 'gender' in label or 'sex' in label: 
                     answer = gender
-                elif 'disability' in label:
+                elif 'disability' in label: 
                     answer = disability_status
-                elif 'proficiency' in label:
+                elif 'proficiency' in label: 
                     answer = 'Professional'
-                elif any(word in label for word in ['university', 'college', 'school']):
-                    answer = university_name
-                elif 'education' in label or 'degree' in label:
-                    answer = education_level
                 # Add location handling
                 elif any(loc_word in label for loc_word in ['location', 'city', 'state', 'country']):
                     if 'country' in label:
-                        answer = country
+                        answer = country 
                     elif 'state' in label:
                         answer = state
                     elif 'city' in label:
@@ -589,12 +541,8 @@ def answer_questions(modal: WebElement, questions_list: set, work_location: str,
             if overwrite_previous_answers or prev_answer is None:
                 if 'citizenship' in label or 'employment eligibility' in label: answer = us_citizenship
                 elif 'veteran' in label or 'protected' in label: answer = veteran_status
-                elif 'disability' in label or 'handicapped' in label:
+                elif 'disability' in label or 'handicapped' in label: 
                     answer = disability_status
-                elif any(word in label for word in ['university', 'college', 'school']):
-                    answer = university_name
-                elif 'education' in label or 'degree' in label:
-                    answer = education_level
                 else: answer = answer_common_questions(label,answer)
                 foundOption = try_xp(radio, f".//label[normalize-space()='{answer}']", False)
                 if foundOption: 
@@ -652,10 +600,6 @@ def answer_questions(modal: WebElement, questions_list: set, work_location: str,
                     elif 'last' in label and 'first' not in label: answer = last_name
                     elif 'employer' in label: answer = recent_employer
                     else: answer = full_name
-                elif any(word in label for word in ['university', 'college', 'school']):
-                    answer = university_name
-                elif 'education' in label or 'degree' in label:
-                    answer = education_level
                 elif 'notice' in label:
                     if 'month' in label:
                         answer = notice_period_months
@@ -694,6 +638,8 @@ def answer_questions(modal: WebElement, questions_list: set, work_location: str,
                                 answer = ai_answer_question(aiClient, label_org, question_type="text", job_description=job_description, user_information_all=user_information_all)
                             elif ai_provider.lower() == "deepseek":
                                 answer = deepseek_answer_question(aiClient, label_org, options=None, question_type="text", job_description=job_description, about_company=None, user_information_all=user_information_all)
+                            elif ai_provider.lower() == "gemini":
+                                answer = gemini_answer_question(aiClient, label_org, options=None, question_type="text", job_description=job_description, about_company=None, user_information_all=user_information_all)
                             else:
                                 randomly_answered_questions.add((label_org, "text"))
                                 answer = years_of_experience
@@ -738,6 +684,8 @@ def answer_questions(modal: WebElement, questions_list: set, work_location: str,
                                 answer = ai_answer_question(aiClient, label_org, question_type="textarea", job_description=job_description, user_information_all=user_information_all)
                             elif ai_provider.lower() == "deepseek":
                                 answer = deepseek_answer_question(aiClient, label_org, options=None, question_type="textarea", job_description=job_description, about_company=None, user_information_all=user_information_all)
+                            elif ai_provider.lower() == "gemini":
+                                answer = gemini_answer_question(aiClient, label_org, options=None, question_type="textarea", job_description=job_description, about_company=None, user_information_all=user_information_all)
                             else:
                                 randomly_answered_questions.add((label_org, "textarea"))
                                 answer = ""
@@ -801,38 +749,29 @@ def external_apply(pagination_element: WebElement, job_id: str, job_link: str, r
     '''
     global tabs_count, dailyEasyApplyLimitReached
     if easy_apply_only:
-        message = ""
         try:
-            notice = driver.find_element(By.CLASS_NAME, "artdeco-inline-feedback__message").text
-            if "exceeded the daily application limit" in notice:
-                dailyEasyApplyLimitReached = True
-                message = "Daily application limit for Easy Apply is reached"
-        except Exception:
-            pass
-        if not message:
-            message = "Easy Apply unavailable or couldn't be clicked"
-        print_lg(message)
+            if "exceeded the daily application limit" in driver.find_element(By.CLASS_NAME, "artdeco-inline-feedback__message").text: dailyEasyApplyLimitReached = True
+        except: pass
+        print_lg("Easy apply failed I guess!")
         if pagination_element != None: return True, application_link, tabs_count
-    skip, application_link, tabs_count = click_easy_apply(driver, pagination_element, application_link, tabs_count)
-    if skip:
+    try:
+        wait.until(EC.element_to_be_clickable((By.XPATH, ".//button[contains(@class,'jobs-apply-button') and contains(@class, 'artdeco-button--3')]"))).click() # './/button[contains(span, "Apply") and not(span[contains(@class, "disabled")])]'
+        wait_span_click(driver, "Continue", 1, True, False)
+        windows = driver.window_handles
+        tabs_count = len(windows)
+        driver.switch_to.window(windows[-1])
+        application_link = driver.current_url
+        print_lg('Got the external application link "{}"'.format(application_link))
+        if close_tabs and driver.current_window_handle != linkedIn_tab: driver.close()
+        driver.switch_to.window(linkedIn_tab)
+        return False, application_link, tabs_count
+    except Exception as e:
+        # print_lg(e)
         print_lg("Failed to apply!")
-        failed_job(
-            job_id,
-            job_link,
-            resume,
-            date_listed,
-            "Probably didn't find Apply button or unable to switch tabs.",
-            "Click failed",
-            application_link,
-            screenshot_name,
-        )
+        failed_job(job_id, job_link, resume, date_listed, "Probably didn't find Apply button or unable to switch tabs.", e, application_link, screenshot_name)
         global failed_count
         failed_count += 1
-    else:
-        if close_tabs and driver.current_window_handle != linkedIn_tab:
-            driver.close()
-        driver.switch_to.window(linkedIn_tab)
-    return skip, application_link, tabs_count
+        return True, application_link, tabs_count
 
 
 
@@ -859,7 +798,7 @@ def failed_job(job_id: str, job_link: str, resume: str, date_listed, error: str,
             fieldnames = ['Job ID', 'Job Link', 'Resume Tried', 'Date listed', 'Date Tried', 'Assumed Reason', 'Stack Trace', 'External Job link', 'Screenshot Name']
             writer = csv.DictWriter(file, fieldnames=fieldnames)
             if file.tell() == 0: writer.writeheader()
-            writer.writerow({'Job ID':job_id, 'Job Link':job_link, 'Resume Tried':resume, 'Date listed':date_listed, 'Date Tried':datetime.now(), 'Assumed Reason':error, 'Stack Trace':exception, 'External Job link':application_link, 'Screenshot Name':screenshot_name})
+            writer.writerow({'Job ID':truncate_for_csv(job_id), 'Job Link':truncate_for_csv(job_link), 'Resume Tried':truncate_for_csv(resume), 'Date listed':truncate_for_csv(date_listed), 'Date Tried':datetime.now(), 'Assumed Reason':truncate_for_csv(error), 'Stack Trace':truncate_for_csv(exception), 'External Job link':truncate_for_csv(application_link), 'Screenshot Name':truncate_for_csv(screenshot_name)})
             file.close()
     except Exception as e:
         print_lg("Failed to update failed jobs list!", e)
@@ -893,11 +832,11 @@ def submitted_jobs(job_id: str, title: str, company: str, work_location: str, wo
             fieldnames = ['Job ID', 'Title', 'Company', 'Work Location', 'Work Style', 'About Job', 'Experience required', 'Skills required', 'HR Name', 'HR Link', 'Resume', 'Re-posted', 'Date Posted', 'Date Applied', 'Job Link', 'External Job link', 'Questions Found', 'Connect Request']
             writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
             if csv_file.tell() == 0: writer.writeheader()
-            writer.writerow({'Job ID':job_id, 'Title':title, 'Company':company, 'Work Location':work_location, 'Work Style':work_style, 
-                            'About Job':description, 'Experience required': experience_required, 'Skills required':skills, 
-                                'HR Name':hr_name, 'HR Link':hr_link, 'Resume':resume, 'Re-posted':reposted, 
-                                'Date Posted':date_listed, 'Date Applied':date_applied, 'Job Link':job_link, 
-                                'External Job link':application_link, 'Questions Found':questions_list, 'Connect Request':connect_request})
+            writer.writerow({'Job ID':truncate_for_csv(job_id), 'Title':truncate_for_csv(title), 'Company':truncate_for_csv(company), 'Work Location':truncate_for_csv(work_location), 'Work Style':truncate_for_csv(work_style), 
+                            'About Job':truncate_for_csv(description), 'Experience required': truncate_for_csv(experience_required), 'Skills required':truncate_for_csv(skills), 
+                                'HR Name':truncate_for_csv(hr_name), 'HR Link':truncate_for_csv(hr_link), 'Resume':truncate_for_csv(resume), 'Re-posted':truncate_for_csv(reposted), 
+                                'Date Posted':truncate_for_csv(date_listed), 'Date Applied':truncate_for_csv(date_applied), 'Job Link':truncate_for_csv(job_link), 
+                                'External Job link':truncate_for_csv(application_link), 'Questions Found':truncate_for_csv(questions_list), 'Connect Request':truncate_for_csv(connect_request)})
         csv_file.close()
     except Exception as e:
         print_lg("Failed to update submitted jobs list!", e)
@@ -934,10 +873,14 @@ def apply_to_jobs(search_terms: list[str]) -> None:
         current_count = 0
         try:
             while current_count < switch_number:
-                # Wait until job listings are loaded and collect them
-                job_listings = find_job_listings()
+                # Wait until job listings are loaded
+                wait.until(EC.presence_of_all_elements_located((By.XPATH, "//li[@data-occludable-job-id]")))
+
                 pagination_element, current_page = get_page_info()
+
+                # Find all job listings in current page
                 buffer(3)
+                job_listings = driver.find_elements(By.XPATH, "//li[@data-occludable-job-id]")  
 
             
                 for job in job_listings:
@@ -956,10 +899,7 @@ def apply_to_jobs(search_terms: list[str]) -> None:
                     except Exception as e:
                         print_lg(f'Trying to Apply to "{title} | {company}" job. Job ID: {job_id}')
 
-                    if job_id:
-                        job_link = "https://www.linkedin.com/jobs/view/" + job_id
-                    else:
-                        job_link = job.find_element(By.TAG_NAME, 'a').get_attribute('href') or 'Unknown'
+                    job_link = "https://www.linkedin.com/jobs/view/"+job_id
                     application_link = "Easy Applied"
                     date_applied = "Pending"
                     hr_link = "Unknown"
@@ -1013,20 +953,16 @@ def apply_to_jobs(search_terms: list[str]) -> None:
 
                     # Calculation of date posted
                     try:
-                        try:
-                            time_posted_text = jobs_top_card.find_element(By.TAG_NAME, 'time').text
-                        except Exception:
-                            time_posted_text = jobs_top_card.find_element(
-                                By.XPATH,
-                                './/span[contains(normalize-space(), " ago")]'
-                            ).text
+                        # try: time_posted_text = find_by_class(driver, "jobs-unified-top-card__posted-date", 2).text
+                        # except: 
+                        time_posted_text = jobs_top_card.find_element(By.XPATH, './/span[contains(normalize-space(), " ago")]').text
                         print("Time Posted: " + time_posted_text)
-                        if "Reposted" in time_posted_text:
+                        if time_posted_text.__contains__("Reposted"):
                             reposted = True
                             time_posted_text = time_posted_text.replace("Reposted", "")
-                        date_listed = calculate_date_posted(time_posted_text)
+                        date_listed = calculate_date_posted(time_posted_text.strip())
                     except Exception as e:
-                        print_lg("Failed to calculate the date posted!", e)
+                        print_lg("Failed to calculate the date posted!",e)
 
 
                     description, experience_required, skip, reason, message = get_job_description()
@@ -1045,6 +981,8 @@ def apply_to_jobs(search_terms: list[str]) -> None:
                                 skills = ai_extract_skills(aiClient, description)
                             elif ai_provider.lower() == "deepseek":
                                 skills = deepseek_extract_skills(aiClient, description)
+                            elif ai_provider.lower() == "gemini":
+                                skills = gemini_extract_skills(aiClient, description)
                             else:
                                 skills = "In Development"
                             print_lg(f"Extracted skills using {ai_provider} AI")
@@ -1055,30 +993,7 @@ def apply_to_jobs(search_terms: list[str]) -> None:
 
                     uploaded = False
                     # Case 1: Easy Apply Button
-                    easy_apply_button = find_easy_apply_button(driver)
-                    if easy_apply_button:
-                        ##> ------ OpenAI : codex - Bug fix ------
-                        try:
-                            element_id = easy_apply_button.get_attribute('id')
-                            if element_id:
-                                click_element(driver, By.ID, element_id, timeout=10)
-                            else:
-                                click_element(driver, By.XPATH, "//button[contains(@class,'jobs-apply-button') and contains(@class, 'artdeco-button--3') and contains(@aria-label, 'Easy')]")
-                        except Exception as e:
-                            print_lg("Failed to click Easy Apply button", e)
-                            skip, application_link, tabs_count = external_apply(pagination_element, job_id, job_link, resume, date_listed, application_link, screenshot_name)
-                            if dailyEasyApplyLimitReached:
-                                print_lg("\n###############  Daily application limit for Easy Apply is reached!  ###############\n")
-                                return
-                            if skip:
-                                continue
-
-                        element_id = easy_apply_button.get_attribute('id')
-                        if element_id:
-                            click_element(driver, By.ID, element_id, timeout=10)
-                        else:
-                            click_element(driver, By.XPATH, "//button[contains(@class,'jobs-apply-button') and contains(@class, 'artdeco-button--3') and contains(@aria-label, 'Easy')]")
-                        ##<
+                    if try_xp(driver, ".//button[contains(@class,'jobs-apply-button') and contains(@class, 'artdeco-button--3') and contains(@aria-label, 'Easy')]"):
                         try: 
                             try:
                                 errored = ""
@@ -1174,10 +1089,16 @@ def apply_to_jobs(search_terms: list[str]) -> None:
                     print_lg(f"\n>-> Didn't find Page {current_page+1}. Probably at the end page of results!\n")
                     break
 
+        except (NoSuchWindowException, WebDriverException) as e:
+            print_lg("Browser window closed or session is invalid. Ending application process.", e)
+            raise e # Re-raise to be caught by main
         except Exception as e:
             print_lg("Failed to find Job listings!")
             critical_error_log("In Applier", e)
-            print_lg(driver.page_source, pretty=True)
+            try:
+                print_lg(driver.page_source, pretty=True)
+            except Exception as page_source_error:
+                print_lg(f"Failed to get page source, browser might have crashed. {page_source_error}")
             # print_lg(e)
 
         
@@ -1233,16 +1154,24 @@ def main() -> None:
         #     except Exception as e:
         #         print_lg("Opening OpenAI chatGPT tab failed!")
         if use_AI:
-            ##> ------ Yang Li : MARKYangL - Feature ------
-            print_lg(f"Initializing AI client for {ai_provider}...")
-            if ai_provider.lower() == "openai":
+            if not isinstance(llm_api_url, str) or len(llm_api_url) < 5:
+                raise ValueError("Invalid input for llm_api_url. Expecting a String of length at least 5!")
+            if ai_provider == "openai":
                 aiClient = ai_create_openai_client()
-            elif ai_provider.lower() == "deepseek":
+            ##> ------ Yang Li : MARKYangL - Feature ------
+            # Create DeepSeek client
+            elif ai_provider == "deepseek":
                 aiClient = deepseek_create_client()
-            else:
-                print_lg(f"Unknown AI provider: {ai_provider}. Supported providers are: openai, deepseek")
-                aiClient = None
+            elif ai_provider == "gemini":
+                aiClient = gemini_create_client()
             ##<
+
+            try:
+                about_company_for_ai = " ".join([word for word in (first_name+" "+last_name).split() if len(word) > 3])
+                print_lg(f"Extracted about company info for AI: '{about_company_for_ai}'")
+            except Exception as e:
+                print_lg("Failed to extract about company info!", e)
+        
         # Start applying to jobs
         driver.switch_to.window(linkedIn_tab)
         total_runs = run(total_runs)
@@ -1261,7 +1190,8 @@ def main() -> None:
                 break
         
 
-    except NoSuchWindowException:   pass
+    except (NoSuchWindowException, WebDriverException) as e:
+        print_lg("Browser window closed or session is invalid. Exiting.", e)
     except Exception as e:
         critical_error_log("In Applier Main", e)
         pyautogui.alert(e,alert_title)
@@ -1288,19 +1218,33 @@ def main() -> None:
             "Obstacles are those frightful things you see when you take your eyes off your goal. - Henry Ford",
             "The only limit to our realization of tomorrow will be our doubts of today. - Franklin D. Roosevelt"
             ])
+        msg = f"\n{quote}\n\n\nBest regards,\nSai Vignesh Golla\nhttps://www.linkedin.com/in/saivigneshgolla/\n\n"
+        pyautogui.alert(msg, "Exiting..")
+        print_lg(msg,"Closing the browser...")
+        if tabs_count >= 10:
+            msg = "NOTE: IF YOU HAVE MORE THAN 10 TABS OPENED, PLEASE CLOSE OR BOOKMARK THEM!\n\nOr it's highly likely that application will just open browser and not do anything next time!" 
+            pyautogui.alert(msg,"Info")
+            print_lg("\n"+msg)
         ##> ------ Yang Li : MARKYangL - Feature ------
         if use_AI and aiClient:
             try:
                 if ai_provider.lower() == "openai":
                     ai_close_openai_client(aiClient)
                 elif ai_provider.lower() == "deepseek":
-                    ai_close_openai_client(aiClient)  
+                    ai_close_openai_client(aiClient)
+                elif ai_provider.lower() == "gemini":
+                    pass # Gemini client does not need to be closed
                 print_lg(f"Closed {ai_provider} AI client.")
             except Exception as e:
                 print_lg("Failed to close AI client:", e)
         ##<
-        try: driver.quit()
-        except Exception as e: critical_error_log("When quitting...", e)
+        try:
+            if driver:
+                driver.quit()
+        except WebDriverException as e:
+            print_lg("Browser already closed.", e)
+        except Exception as e: 
+            critical_error_log("When quitting...", e)
 
 
 if __name__ == "__main__":

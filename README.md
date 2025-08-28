@@ -39,19 +39,13 @@ Click on above image to watch the demo or use this link https://youtu.be/gMbB1fW
   <br> <br>
   If you are using Windows, click on `windows-setup.bat` available in the `/setup` folder, this will install the latest chromedriver automatically.
 6. If you have questions or need help setting it up or to talk in general, join the github server: https://discord.gg/fFp7uUzWCY
-7. **Note**: Recent updates changed how job cards are detected. The bot now searches for `li[data-occludable-job-id]` elements and falls back to the selector `div.scaffold-layout__list ul > li.scaffold-layout__list-item`. Older dynamic `emberXXX` IDs are no longer used.
 
 [back to index](#-content)
 
 <br>
 
-## ❓ Troubleshooting
-If you encounter a "Failed to find Job listings! In Applier" message, make sure you are using an up-to-date version. The bot now searches for `li[data-occludable-job-id]` elements and falls back to the selector `div.scaffold-layout__list ul > li.scaffold-layout__list-item` when locating job cards.
-
-
-
 ## 🔧 How to configure
-1. Open `personals.py` file in `/config` folder and enter your details like name, phone number, address, education level, university name, etc. Whatever you want to fill in your applications.
+1. Open `personals.py` file in `/config` folder and enter your details like name, phone number, address, etc. Whatever you want to fill in your applications.
 2. Open `questions.py` file in `/config` folder and enter your answers for application questions, configure wether you want the bot to pause before submission or pause if it can't answer unknown questions.
 3. Open `search.py` file in `/config` folder and enter your search preferences, job filters, configure the bot as per your needs (these settings decide which jobs to apply for or skip).
 4. Open `secrets.py` file in `/config` folder and enter your LinkedIn username, password to login and OpenAI API Key for generation of job tailored resumes and cover letters (This entire step is optional). If you do not provide username or password or leave them as default, it will login with saved profile in browser, if failed will ask you to login manually.
@@ -296,6 +290,10 @@ With heartfelt appreciation, <br>
 <br>
 
 ## 🗓️ Major Updates History:
+### Jul 20, 2024
+- Contributions from community have been added
+- Better AI support, minor bug fixes
+
 ### Nov 28, 2024
 - Patched to work for latest changes in Linkedin.
 - Users can now select to follow or not follow companies when submitting application.
@@ -417,7 +415,7 @@ alternate link: https://discord.gg/ykfDjRFB
     - [Support Q&A](https://github.com/GodsScion/Auto_job_applier_linkedIn/discussions/categories/support-q-a)
 
 
-#### ℹ️ Version: 24.12.29.12.30 Stable Preview
+#### ℹ️ Version: 25.07.20.9.30 Community Alpha
 
 ---
 
